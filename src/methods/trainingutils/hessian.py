@@ -1,13 +1,14 @@
 import torch
 import numpy as np
 from typing import Dict
+from config import DEVICE
 
 
 def compute_hessian_eigenvalues(
     model: torch.nn.Module,
     criterion: torch.nn.Module,
     dataloader: torch.utils.data.DataLoader,
-    device: torch.device = torch.device("mps"),
+    device: torch.device = DEVICE,
     k: int = 5,
     max_iter: int = 100,
     tol: float = 1e-8,

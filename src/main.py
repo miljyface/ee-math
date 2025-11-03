@@ -173,7 +173,7 @@ def analyze_hessian(norm_type: str, num_eigenvalues=5) -> dict:
 
     start_time = time.time()
     hessian_results = compute_hessian_eigenvalues(
-        model, nn.CrossEntropyLoss(), test_loader, device=torch.device("mps"), k=5
+        model, nn.CrossEntropyLoss(), test_loader, device=torch.device("cpu"), k=5
     )
 
     elapsed = time.time() - start_time
@@ -205,9 +205,9 @@ def analyze_hessian(norm_type: str, num_eigenvalues=5) -> dict:
     
     return hessian_analysis
 
-norm = 'rms'
-train_phase(norm)
-analyze_loss_landscape(norm)
+norm = 'layer'
+#train_phase(norm)
+#analyze_loss_landscape(norm)
 analyze_hessian(norm)
     
 # norm_types = ['dyt', 'none', 'batch', 'layer', 'group', 'rms', 'piecewise']
