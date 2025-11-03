@@ -3,10 +3,10 @@ import numpy as np
 from torch.utils.data import TensorDataset
 from .dataloader import MnistDataloader
 
-train_image_path = '/Users/guanrong/Desktop/EE_analyse/rawdata/t10k-images-idx3-ubyte/t10k-images-idx3-ubyte' 
-train_label_path = '/Users/guanrong/Desktop/EE_analyse/rawdata/t10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte'
-test_image_path = '/Users/guanrong/Desktop/EE_analyse/rawdata/train-images-idx3-ubyte/train-images-idx3-ubyte'
-test_label_path = '/Users/guanrong/Desktop/EE_analyse/rawdata/train-labels-idx1-ubyte/train-labels-idx1-ubyte'
+train_image_path = '/home/lguan/文档/ee-math/rawdata/t10k-images-idx3-ubyte/t10k-images-idx3-ubyte' 
+train_label_path = '/home/lguan/文档/ee-math/rawdata/t10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte'
+test_image_path = '/home/lguan/文档/ee-math/rawdata/train-images-idx3-ubyte/train-images-idx3-ubyte'
+test_label_path = '/home/lguan/文档/ee-math/rawdata/train-labels-idx1-ubyte/train-labels-idx1-ubyte'
 
 def prep_tensors():
     mnist_dataloader = MnistDataloader(train_image_path, train_label_path, test_image_path, test_label_path)

@@ -12,7 +12,7 @@ BATCH_SIZE = 128
 NUM_EPOCHS = 10
 LEARNING_RATE = 0.001
 DEVICE = torch.device("cuda")
-OUTPUT_DIR = Path("/Users/guanrong/Desktop/EE_analyse/output")
+OUTPUT_DIR = Path("~/文档/ee-math/output")
 JSON_DIR = OUTPUT_DIR / "json"
 WEIGHTS_DIR = OUTPUT_DIR / "weights"
 JSON_DIR.mkdir(parents=True, exist_ok=True)
