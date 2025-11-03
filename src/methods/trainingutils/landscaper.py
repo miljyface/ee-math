@@ -5,10 +5,6 @@ import time
 from typing import List, Dict, Tuple
 from torch.utils.data import DataLoader
 
-# smaller library
-# import command: --upgrade git+https://github.com/noahgolmant/pytorch-hessian-eigenthings.git@master#egg=hessian-eigenthings
-from hessian_eigenthings import compute_hessian_eigenthings
-
 class LossLandscapeAnalyzer:
     # analyzes loss landscape geometry using filter-normalized random directions
     # based on "Visualizing the Loss Landscape of Neural Nets" (Li et al., 2018)
@@ -80,6 +76,7 @@ class LossLandscapeAnalyzer:
                 num_batches += 1
                 
                 if num_batches >= 10:
+                    # minimum since my laptop sucks
                     break
         
         return total_loss / num_batches

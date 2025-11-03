@@ -10,7 +10,6 @@ def train_model(model: nn.Module,
                 num_epochs: int = 5,
                 lr: float = 0.001,
                 device: torch.device = torch.device('mps')) -> Dict[str, List[float]]:
-    """Train model and return training history with loss, accuracy, and learning rate."""
     
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()

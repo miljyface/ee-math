@@ -1,6 +1,7 @@
 # My own shit
 output/
 src/config.py
+render.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

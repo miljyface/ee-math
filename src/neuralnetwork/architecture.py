@@ -7,7 +7,8 @@ from methods.customnorm.linear import PiecewiseLinear
 from methods.customnorm.rms_norm import RMSNorm
 
 class MNISTNet(nn.Module):
-    
+    # standard cnn architecture for MNIST
+    # MNIST is easy, 4 layers should be enough
     def __init__(self, norm_type: str = 'batch', num_classes: int = 10):
         super().__init__()
         self.norm_type = norm_type

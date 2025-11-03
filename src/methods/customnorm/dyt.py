@@ -6,6 +6,7 @@ class DynamicTanh(nn.Module):
     # essentially just every transformation we've learn't applied to y = tanh(x)
     # ^ y = atan(x)+c
     # picked because it looks similar to regular normalisation distributions
+    
     def __init__(self, num_features: int, init_alpha: float = 0.5):
         super().__init__()
         self.alpha = nn.Parameter(torch.ones(1) * init_alpha)
