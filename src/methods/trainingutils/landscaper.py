@@ -10,10 +10,8 @@ from torch.utils.data import DataLoader
 from hessian_eigenthings import compute_hessian_eigenthings
 
 class LossLandscapeAnalyzer:
-    """
-    Analyzes loss landscape geometry using filter-normalized random directions
-    Based on "Visualizing the Loss Landscape of Neural Nets" (Li et al., 2018)
-    """
+    # analyzes loss landscape geometry using filter-normalized random directions
+    # based on "Visualizing the Loss Landscape of Neural Nets" (Li et al., 2018)
     
     def __init__(self, model: nn.Module, criterion: nn.Module, dataloader: DataLoader, device: torch.device):
         self.model = model
@@ -85,49 +83,3 @@ class LossLandscapeAnalyzer:
                     break
         
         return total_loss / num_batches
-
-    def compute_hessian_eigenvalues(self, num_eigenvalues: int = 5) -> dict:
-        print(f"[Landscaper] Starting Hessian eigenvalue computation with hessian-eigenthings on device: {self.device}")
-        self.model.to(self.device)
-        self.model.eval()
-        self.criterion.to(self.device)
-        
-        # Select one batch for the Hessian (as recommended in most spectral analyses)
-        data_iter = iter(self.dataloader)
-        try:
-            inputs, targets = next(data_iter)
-        except StopIteration:
-            raise RuntimeError("Dataloader is empty.")
-
-        inputs, targets = inputs.to(self.device), targets.to(self.device)
-
-        print(f"[Landscaper] Computing top {num_eigenvalues} eigenvalues (this may take several minutes)...")
-        # Run eigenthings (Lanczos by default)
-        eig_start = time.time()
-
-        def lossfn():
-            outputs = self.model(inputs)
-            return self.criterion(outputs, targets)
-
-        eigenvalues, eigenvectors = compute_hessian_eigenthings(
-            model=self.model, 
-            dataloader=self.dataloader,
-            loss=lossfn(),
-            num_eigenthings=num_eigenvalues,
-            mode='power_iter',
-            use_gpu=False
-        )
-        eig_elapsed = time.time() - eig_start
-        print(f"[Landscaper] Eigenvalue computation completed in {eig_elapsed:.2f}s")
-        print(f"[Landscaper] Top eigenvalues: {eigenvalues}")
-
-        results = {
-            'top_eigenvalues': eigenvalues.cpu().numpy(),
-            'max_eigenvalue': float(eigenvalues[0].cpu().item()),
-            'min_eigenvalue': float(eigenvalues[-1].cpu().item()),
-            'condition_number': float(abs(eigenvalues[0] / eigenvalues[-1].clamp_min(1e-12))),
-            'time_seconds': eig_elapsed,
-            'top_eigenvectors': [v.cpu().numpy() for v in eigenvectors]
-        }
-        print("[Landscaper] Hessian eigenvalue analysis (hessian-eigenthings) complete.")
-        return results

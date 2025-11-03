@@ -3,10 +3,8 @@ import torch.nn as nn
 from typing import List
 
 class PiecewiseLinear(nn.Module):
-    """
-    Custom piecewise linear normalization as an alternative
-    Divides input into regions and applies different linear transformations
-    """
+    # very jagged sine wave
+    # essentially testing the effects of a shitty norm function
     def __init__(self, num_features: int, breakpoints: List[float] = [-2.0, -1.0, 1.0, 2.0]):
         super().__init__()
         self.breakpoints = sorted(breakpoints)

@@ -2,10 +2,9 @@ import torch
 import torch.nn as nn
 
 class RMSNorm(nn.Module):
-    """
-    Root Mean Square Layer Normalization
-    Used in LLaMA and modern language models
-    """
+    # this one is used in big transformers
+    # this is not a big transformer
+    # results may suck
     def __init__(self, num_features: int, eps: float = 1e-6):
         super().__init__()
         self.eps = eps

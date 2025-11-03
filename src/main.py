@@ -12,36 +12,18 @@ from torch.utils.data import DataLoader
 from methods.trainingutils.tensorprep import prep_tensors
 from methods.trainingutils.hessian import compute_hessian_eigenvalues
 
+from config import BATCH_SIZE, OUTPUT_DIR, NUM_EPOCHS, LEARNING_RATE, DEVICE
 
-BATCH_SIZE = 128
-NUM_EPOCHS = 10
-LEARNING_RATE = 0.001
-DEVICE = torch.device("mps")
-OUTPUT_DIR = Path("/Users/guanrong/Desktop/ee_shit/ee-math/output")
 JSON_DIR = OUTPUT_DIR / "json"
 WEIGHTS_DIR = OUTPUT_DIR / "weights"
-JSON_DIR.mkdir(parents=True, exist_ok=True)
-WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
 
-
-def find_convergence_epoch(val_acc_list, threshold=98.0):
-    """Find the first epoch where validation accuracy reaches threshold."""
+def find_convergence_epoch(val_acc_list, threshold=98.0) -> int:
     for epoch_idx, acc in enumerate(val_acc_list):
         if acc >= threshold:
             return epoch_idx + 1
     return -1  # Not converged
 
-
 def train_phase(norm_type: str) -> dict:
-    """
-    Training phase: train model and save weights + basic training history.
-    
-    Args:
-        norm_type: Type of normalization to use
-        
-    Returns:
-        dict: Training results including history and metadata
-    """
     train_dataset, test_dataset = prep_tensors()
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -55,7 +37,7 @@ def train_phase(norm_type: str) -> dict:
     print(f" Batch size: {BATCH_SIZE}")
     print(f" Learning rate: {LEARNING_RATE}")
     
-    # Train
+    # train
     history = train_model(
         model, train_loader, test_loader,
         num_epochs=NUM_EPOCHS,
@@ -63,7 +45,7 @@ def train_phase(norm_type: str) -> dict:
         device=DEVICE
     )
     
-    # Calculate convergence epoch
+    # calculate convergence epoch
     convergence_epoch = find_convergence_epoch(history['val_acc'], threshold=98.0)
     if convergence_epoch == -1:
         convergence_epoch_str = "Not converged"
@@ -72,7 +54,6 @@ def train_phase(norm_type: str) -> dict:
         convergence_epoch_str = str(convergence_epoch)
         convergence_epoch_num = convergence_epoch
     
-    # Compile training results
     results = {
         'metadata': {
             'normalization': norm_type,
@@ -117,23 +98,10 @@ def train_phase(norm_type: str) -> dict:
     print(f" Weights saved: {weight_path}")
     print(f" Training results saved: {json_path}\n")
     
-    return results
-
+    return results # dictionary of training results saved to training_<name>.json
 
 def analyze_loss_landscape(norm_type: str, alpha_range=(-0.5, 0.5), beta_range=(-0.5, 0.5), num_points=20) -> dict:
-    """
-    Analyze loss landscape for a trained model.
-    
-    Args:
-        norm_type: Type of normalization used in model
-        alpha_range: Range for first direction
-        beta_range: Range for second direction
-        num_points: Number of grid points per dimension
-        
-    Returns:
-        dict: Loss landscape analysis results
-    """
-    # Load model
+    # load model
     model = MNISTNet(norm_type=norm_type)
     weight_path = WEIGHTS_DIR / f"model_{norm_type}.pth"
     
@@ -143,13 +111,13 @@ def analyze_loss_landscape(norm_type: str, alpha_range=(-0.5, 0.5), beta_range=(
     model.load_state_dict(torch.load(weight_path, map_location=DEVICE))
     model.to(DEVICE)
     
-    # Load test data
+    # load test data
     _, test_dataset = prep_tensors()
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
     
     print(f"[{norm_type.upper()}] Computing loss landscape")
     
-    # Compute loss landscape
+    # compute loss landscape
     analyzer = LossLandscapeAnalyzer(model, nn.CrossEntropyLoss(), test_loader, DEVICE)
     directions = analyzer.get_filter_normalized_directions(num_directions=2)
     alpha_grid, beta_grid, loss_grid = analyzer.compute_loss_2d(
@@ -159,7 +127,7 @@ def analyze_loss_landscape(norm_type: str, alpha_range=(-0.5, 0.5), beta_range=(
         num_points=num_points
     )
     
-    # Compile landscape results
+    # compile landscape results
     landscape_results = {
         'loss_landscape': {
             'alpha_grid': alpha_grid.tolist(),
@@ -176,7 +144,7 @@ def analyze_loss_landscape(norm_type: str, alpha_range=(-0.5, 0.5), beta_range=(
         }
     }
     
-    # Save landscape results
+    # save landscape results
     json_path = JSON_DIR / f"landscape_{norm_type}.json"
     with open(json_path, 'w') as f:
         json.dump(landscape_results, f, indent=2)
@@ -187,19 +155,8 @@ def analyze_loss_landscape(norm_type: str, alpha_range=(-0.5, 0.5), beta_range=(
     
     return landscape_results
 
-
 def analyze_hessian(norm_type: str, num_eigenvalues=5) -> dict:
-    """
-    Analyze Hessian eigenvalues for a trained model.
-    
-    Args:
-        norm_type: Type of normalization used in model
-        num_eigenvalues: Number of top eigenvalues to compute
-        
-    Returns:
-        dict: Hessian analysis results
-    """
-    # Load model
+    # load model
     model = MNISTNet(norm_type=norm_type)
     weight_path = WEIGHTS_DIR / f"model_{norm_type}.pth"
     
@@ -209,7 +166,7 @@ def analyze_hessian(norm_type: str, num_eigenvalues=5) -> dict:
     model.load_state_dict(torch.load(weight_path, map_location=DEVICE))
     model.to(DEVICE)
     
-    # Load test data
+    # load test data
     _, test_dataset = prep_tensors()
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
     
@@ -226,7 +183,7 @@ def analyze_hessian(norm_type: str, num_eigenvalues=5) -> dict:
     min_eigenvalue = float(np.min(top_eigenvalues))
     condition_number = float(abs(max_eigenvalue / (min_eigenvalue if min_eigenvalue != 0 else 1e-12)))
 
-    # Compile hessian results
+    # compile hessian results
     hessian_analysis = {
         'hessian_analysis': {
             'top_eigenvalues': top_eigenvalues.tolist(),
@@ -237,7 +194,7 @@ def analyze_hessian(norm_type: str, num_eigenvalues=5) -> dict:
         }
     }
     
-    # Save hessian results
+    # save hessian results
     json_path = JSON_DIR / f"hessian_{norm_type}.json"
     with open(json_path, 'w') as f:
         json.dump(hessian_analysis, f, indent=2)
@@ -249,46 +206,8 @@ def analyze_hessian(norm_type: str, num_eigenvalues=5) -> dict:
     
     return hessian_analysis
 
-
-def combine_results(norm_type: str) -> dict:
-    # Load all individual result files
-    training_path = JSON_DIR / f"training_{norm_type}.json"
-    landscape_path = JSON_DIR / f"landscape_{norm_type}.json"
-    hessian_path = JSON_DIR / f"hessian_{norm_type}.json"
+#train_phase('group')
+#analyze_loss_landscape('group')
+#analyze_hessian('group')
     
-    combined = {}
-    
-    if training_path.exists():
-        with open(training_path, 'r') as f:
-            combined.update(json.load(f))
-    
-    if landscape_path.exists():
-        with open(landscape_path, 'r') as f:
-            combined.update(json.load(f))
-    
-    if hessian_path.exists():
-        with open(hessian_path, 'r') as f:
-            combined.update(json.load(f))
-    
-    # Save combined results
-    combined_path = JSON_DIR / f"results_{norm_type}.json"
-    with open(combined_path, 'w') as f:
-        json.dump(combined, f, indent=2)
-    
-    print(f"[{norm_type.upper()}] Combined results saved: {combined_path}")
-    
-    return combined
-
-if __name__ == "__main__":
-    train_phase('none')
-    analyze_loss_landscape('none')
-    analyze_hessian('none')
-    
-    # Option 4: Run specific analysis
-    # analyze_loss_landscape('layer')
-    # analyze_hessian('layer')
-    
-    # Option 5: Batch processing
-    # norm_types = ['dyt', 'none', 'batch', 'layer', 'group', 'rms', 'piecewise']
-    # for norm_type in norm_types:
-    #     run_full_pipeline(norm_type)
+# norm_types = ['dyt', 'none', 'batch', 'layer', 'group', 'rms', 'piecewise']
