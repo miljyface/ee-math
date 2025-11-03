@@ -1,9 +1,13 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import time
 from typing import List, Dict, Tuple
 from torch.utils.data import DataLoader
-from pyhessian import hessian
+
+# smaller library
+# import command: --upgrade git+https://github.com/noahgolmant/pytorch-hessian-eigenthings.git@master#egg=hessian-eigenthings
+from hessian_eigenthings import compute_hessian_eigenthings
 
 class LossLandscapeAnalyzer:
     """
@@ -81,58 +85,49 @@ class LossLandscapeAnalyzer:
                     break
         
         return total_loss / num_batches
-    
-    def compute_hessian_eigenvalues(self, num_eigenvalues: int = 5) -> Dict[str, np.ndarray]:
-        print(f"[Landscaper] Computing Hessian eigenvalues (top {num_eigenvalues})...")
+
+    def compute_hessian_eigenvalues(self, num_eigenvalues: int = 5) -> dict:
+        print(f"[Landscaper] Starting Hessian eigenvalue computation with hessian-eigenthings on device: {self.device}")
         self.model.to(self.device)
+        self.model.eval()
+        self.criterion.to(self.device)
         
-        # MOVING data to correct device for PyHessian
-        class DeviceLoader:
-            def __init__(self, dataloader, device):
-                self.dataloader = dataloader
-                self.device = device
-            def __iter__(self):
-                for x, y in self.dataloader:
-                    yield x.to(self.device), y.to(self.device)
-            def __len__(self):
-                return len(self.dataloader)
-        dl_device = DeviceLoader(self.dataloader, self.device)
+        # Select one batch for the Hessian (as recommended in most spectral analyses)
+        data_iter = iter(self.dataloader)
+        try:
+            inputs, targets = next(data_iter)
+        except StopIteration:
+            raise RuntimeError("Dataloader is empty.")
 
-        # Create Hessian computation object
-        hessian_comp = hessian(
-            self.model,
-            self.criterion,
-            dataloader=dl_device,
-            cuda=True
+        inputs, targets = inputs.to(self.device), targets.to(self.device)
+
+        print(f"[Landscaper] Computing top {num_eigenvalues} eigenvalues (this may take several minutes)...")
+        # Run eigenthings (Lanczos by default)
+        eig_start = time.time()
+
+        def lossfn():
+            outputs = self.model(inputs)
+            return self.criterion(outputs, targets)
+
+        eigenvalues, eigenvectors = compute_hessian_eigenthings(
+            model=self.model, 
+            dataloader=self.dataloader,
+            loss=lossfn(),
+            num_eigenthings=num_eigenvalues,
+            mode='power_iter',
+            use_gpu=False
         )
-
-        # Compute top eigenvalues (largest magnitude)
-        top_eigenvalues, _top_eigenvectors = hessian_comp.eigenvalues(
-            top_n=num_eigenvalues
-        )
-
-        # Compute trace (sum of all eigenvalues - indicator of sharpness)
-        print("[Landscaper] Computing Hessian trace...")
-        trace = hessian_comp.trace()
-
-        # Compute density (eigenvalue distribution)
-        print("[Landscaper] Computing eigenvalue density...")
-        density_eigen, density_weight = hessian_comp.density()
+        eig_elapsed = time.time() - eig_start
+        print(f"[Landscaper] Eigenvalue computation completed in {eig_elapsed:.2f}s")
+        print(f"[Landscaper] Top eigenvalues: {eigenvalues}")
 
         results = {
-            'top_eigenvalues': np.array(top_eigenvalues),
-            'max_eigenvalue': np.array([top_eigenvalues[0]]) if top_eigenvalues else np.array([1.0]),
-            'min_eigenvalue': np.array([top_eigenvalues[-1]]) if len(top_eigenvalues) > 1 else np.array([0.1]),
-            'trace': np.array([trace]),
-            'density_eigen': np.array(density_eigen),
-            'density_weight': np.array(density_weight)
+            'top_eigenvalues': eigenvalues.cpu().numpy(),
+            'max_eigenvalue': float(eigenvalues[0].cpu().item()),
+            'min_eigenvalue': float(eigenvalues[-1].cpu().item()),
+            'condition_number': float(abs(eigenvalues[0] / eigenvalues[-1].clamp_min(1e-12))),
+            'time_seconds': eig_elapsed,
+            'top_eigenvectors': [v.cpu().numpy() for v in eigenvectors]
         }
-        # Compute sharpness metric (condition number approximation)
-        if len(top_eigenvalues) > 1:
-            condition_number = abs(top_eigenvalues[0] / top_eigenvalues[-1]) if top_eigenvalues[-1] != 0 else np.inf
-            results['condition_number'] = condition_number
-            print(f"[Landscaper] Condition number (λ_max/λ_min): {condition_number:.2f}")
-            print(f"[Landscaper] Top eigenvalues: {top_eigenvalues}")
-            print(f"[Landscaper] Trace: {trace:.4f}")
-
+        print("[Landscaper] Hessian eigenvalue analysis (hessian-eigenthings) complete.")
         return results
