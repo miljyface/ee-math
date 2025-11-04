@@ -11,15 +11,15 @@ def prep_tensors():
     mnist_dataloader = MnistDataloader(train_image_path, train_label_path, test_image_path, test_label_path)
     (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
     
-    # Convert to numpy arrays
+    # Convert to numpy arrays & Normalise
     x_train = np.array(x_train, dtype=np.float32)
     y_train = np.array(y_train, dtype=np.int64)
     x_test = np.array(x_test, dtype=np.float32)
     y_test = np.array(y_test, dtype=np.int64)
-    
-    # Normalize pixel values from [0, 255] to [0, 1]
-    x_train = x_train / 255.0
-    x_test = x_test / 255.0
+    train_mean = x_train.mean()
+    train_std = x_train.std()
+    x_train = (x_train - train_mean) / train_std
+    x_test = (x_test - train_mean) / train_std
     
     # Convert to PyTorch tensors
     x_train = torch.tensor(x_train, dtype=torch.float32)

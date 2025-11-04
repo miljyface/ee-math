@@ -3,13 +3,14 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from typing import Dict, List
+from config import DEVICE
 
 def train_model(model: nn.Module,
                 train_loader: DataLoader,
                 val_loader: DataLoader,
                 num_epochs: int = 5,
                 lr: float = 0.001,
-                device: torch.device = torch.device('mps')) -> Dict[str, List[float]]:
+                device: torch.device = DEVICE) -> Dict[str, List[float]]:
     
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
