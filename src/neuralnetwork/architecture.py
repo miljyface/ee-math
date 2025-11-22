@@ -8,7 +8,7 @@ from methods.customnorm.rms_norm import RMSNorm
 
 class MNISTNet(nn.Module):
     # standard cnn architecture for MNIST
-    # MNIST is easy, 4 layers should be enough
+    # MNIST is easy, 4 layers should be overkill
     def __init__(self, norm_type: str = 'none', num_classes: int = 10):
         super().__init__()
         self.norm_type = norm_type

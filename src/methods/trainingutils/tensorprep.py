@@ -6,7 +6,7 @@ from config import train_image_path, train_label_path, test_image_path, test_lab
 
 
 def prep_tensors():
-    # load and preprocess MNIST data with proper normalization.
+    # load and preprocess MNIST data with normalization.
     
     mnist_dataloader = MnistDataloader(train_image_path, train_label_path, test_image_path, test_label_path)
     (x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
